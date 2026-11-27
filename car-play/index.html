@@ -8,224 +8,140 @@
 <style>
 * { box-sizing: border-box }
 body { margin: 0; background: #f6f1e7; color: #183b35; font: 1rem system-ui,sans-serif }
-main { width: min(100%, 850px); margin: auto; padding: clamp(12px, 3vw, 28px) }
-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px }
-h1 { font-size: clamp(1.35rem, 5vw, 2.1rem); margin: 0 }
-button { font: inherit; font-weight: 750; cursor: pointer; touch-action: manipulation; color: inherit }
-button:focus-visible, summary:focus-visible { outline: 3px solid #9b420d; outline-offset: 3px }
-nav, .controls { display: grid; gap: 8px }
-nav { grid-template-columns: repeat(3, 1fr); margin-bottom: 10px }
-nav button, #sound { border: 1px solid #b7c9bd; background: #fffdfa; min-height: 44px; border-radius: 12px; padding: 5px 8px }
-nav button[aria-pressed="true"] { background: #20564b; color: white; border-color: #20564b }
-#sound { white-space: nowrap; font-size: .85rem }
-.scene { position: relative; overflow: hidden; isolation: isolate; height: clamp(145px, 43dvh, 340px); border-radius: 22px; background: linear-gradient(#baddf4 0 61%, #a4c582 61%) }
-.sun { position: absolute; top: 12%; right: 12%; width: clamp(30px, 8vw, 64px); aspect-ratio: 1; background: #ffda71; border-radius: 50% }
-.hill { position: absolute; top: 49%; left: -4%; width: 58%; height: 30%; border-radius: 50% 50% 0 0; background: #83ad74 }
-.hill:nth-child(3) { left: 45%; top: 53%; background: #91bb7b }
-.road { position: absolute; bottom: 10%; width: 100%; height: 26%; background: #485454; border-block: 3px solid #e7ebe0 }
-.road::before { content: ""; position: absolute; top: 55%; inset-inline: 0; border-top: 3px dashed #faf0c8 }
-#tunnel { position: absolute; z-index: 2; right: 8%; bottom: 10%; width: 25%; height: 51%; border: clamp(7px, 2.5vw, 20px) solid #738780; border-bottom: 0; border-radius: 48% 48% 0 0; background: #273734 }
-#car { position: absolute; z-index: 1; width: clamp(77px, 19vw, 145px); height: auto; left: 5%; bottom: 23%; transform: scaleX(-1); transition: left 750ms ease-in-out, opacity 180ms }
-#car.forward { left: 73% }
-#car.inside { opacity: 0 }
-#cue { position: absolute; z-index: 3; left: 8%; top: 10%; margin: 0; padding: 5px 14px; background: #fffdfa; border-radius: 12px; font-size: clamp(1.35rem, 6vw, 2.5rem); font-weight: 850 }
-.controls { grid-template-columns: minmax(0, 3fr) minmax(0, 1fr); margin-top: 10px }
-.controls button { border: 0; border-radius: 15px; min-height: 60px; font-size: clamp(1rem, 5vw, 1.55rem) }
-#play { background: #20564b; color: white }
-#stop { background: #e1e8dd }
-#stop:disabled { opacity: .55; cursor: default }
-details { margin-top: 12px; line-height: 1.55; font-size: .9rem }
-summary { cursor: pointer; min-height: 32px }
+main { width: min(100%, 650px); margin: auto; padding: clamp(10px, 3vw, 22px) }
+h1 { font-size: clamp(1.4rem, 5vw, 2rem); margin: 0 0 8px }
+#scene { position: relative; width: 100%; height: clamp(155px, 62dvh, 610px); overflow: hidden; border-radius: 20px; background: #abc78f }
+#street { display: block; width: 100%; height: 100% }
+#cue { position: absolute; margin: 0; top: 10px; left: 10px; background: #fffdfa; border-radius: 10px; padding: 6px 11px; font-size: clamp(1rem, 4vw, 1.3rem); font-weight: 800 }
+.moving #cue { background: #20564b; color: white }
+button, select { font: inherit; color: inherit }
+button:focus-visible, select:focus-visible { outline: 3px solid #9b420d; outline-offset: 3px }
+#mic { width: 100%; min-height: 56px; margin-top: 8px; border: 0; border-radius: 14px; background: #20564b; color: white; font-size: 1.2rem; font-weight: 750; cursor: pointer; touch-action: manipulation }
+#mic[aria-pressed="true"] { background: #e1e8dd; color: #183b35 }
+#mic-status { margin: 6px 0; min-height: 1.35em; font-size: .88rem }
+#mic-options { display: inline-flex; align-items: center; gap: 7px; min-height: 36px; font-size: .88rem }
+#mic-options[hidden] { display: none }
+select { min-height: 36px; background: #fffdfa; border: 1px solid #b7c9bd; border-radius: 8px }
+details { margin-top: 5px; font-size: .86rem; line-height: 1.5 }
 details p { margin: 4px 0 }
 @media (max-height: 480px) and (orientation: landscape) {
-  main { padding-block: 8px }
-  header { margin-bottom: 6px }
-  nav { margin-bottom: 6px }
-  .scene { height: 40dvh }
-  .controls button { min-height: 46px }
+  #scene { height: 47dvh }
+  #mic { min-height: 44px }
 }
-@media (prefers-reduced-motion: reduce) { #car { transition: none } }
-.microphone { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 10px }
-#mic { min-height: 44px; padding: 6px 12px; border: 1px solid #b7c9bd; border-radius: 12px; background: #fffdfa }
-#mic[aria-pressed="true"] { background: #20564b; color: white }
-#mic-status { margin: 0; flex: 1 1 170px; font-size: .88rem }
-.mic-sensitivity { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; font-size: .88rem }
-.mic-sensitivity select { font: inherit; min-height: 36px; color: inherit; background: #fffdfa; border: 1px solid #b7c9bd; border-radius: 8px }
-.mic-sensitivity[hidden] { display: none }
 </style>
 </head>
 <body>
 <main>
-  <header>
-    <h1>부릉부릉 놀이터</h1>
-    <button id="sound" type="button" aria-pressed="true">소리 켜짐</button>
-  </header>
-  <nav aria-label="자동차 놀이 고르기">
-    <button type="button" data-mode="race" aria-pressed="true">경주</button>
-    <button type="button" data-mode="horn" aria-pressed="false">경적</button>
-    <button type="button" data-mode="tunnel" aria-pressed="false">터널</button>
-  </nav>
-  <section class="scene" aria-label="자동차 놀이터">
-    <div class="sun" aria-hidden="true"></div>
-    <div class="hill" aria-hidden="true"></div>
-    <div class="hill" aria-hidden="true"></div>
-    <div class="road" aria-hidden="true"></div>
-    <div id="tunnel" aria-hidden="true" hidden></div>
-    <img id="car" alt="빨간 자동차" draggable="false" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 150 90'%3E%3Cpath fill='%23ab332c' d='M8 65V47q0-7 10-10l22-5 20-23h46l20 23 14 5q5 2 5 10v18q0 6-6 6H14q-6 0-6-6Z'/%3E%3Cpath fill='%23d3eaf1' d='M49 32 65 15h16v17Zm39 0V15h15l15 17Z'/%3E%3Cpath fill='%23fff0bc' d='M8 48h16v10H8z'/%3E%3Ccircle cx='37' cy='70' r='15' fill='%23243030'/%3E%3Ccircle cx='116' cy='70' r='15' fill='%23243030'/%3E%3Ccircle cx='37' cy='70' r='6' fill='%23cbd9d5'/%3E%3Ccircle cx='116' cy='70' r='6' fill='%23cbd9d5'/%3E%3C/svg%3E">
-    <p id="cue" role="status" aria-live="polite">준비!</p>
-  </section>
-  <div class="controls">
-    <button id="play" type="button">출발!</button>
-    <button id="stop" type="button" disabled>멈춰</button>
+  <h1>부릉부릉 놀이터</h1>
+  <div id="scene">
+    <canvas id="street" role="img" aria-label="양옆에 건물이 있는 길과 위쪽을 향한 빨간 자동차"></canvas>
+    <p id="cue">준비!</p>
   </div>
-  <div class="microphone" aria-label="마이크 설정">
-    <button id="mic" type="button" aria-pressed="false">마이크 켜기</button>
-    <p id="mic-status" role="status">마이크를 켜면 짧은 소리에도 반응해요.</p>
-    <label class="mic-sensitivity" id="mic-options" hidden>민감도
-      <select id="mic-sensitivity">
-        <option value="0.028">낮게</option>
-        <option value="0.015" selected>보통</option>
-        <option value="0.008">높게</option>
-      </select>
-    </label>
-  </div>
+  <button id="mic" type="button" aria-pressed="false">마이크 켜기</button>
+  <p id="mic-status" role="status">마이크를 켜면 소리로 자동차를 움직일 수 있어요.</p>
+  <label id="mic-options" hidden>민감도
+    <select id="mic-sensitivity">
+      <option value="0.028">낮게</option>
+      <option value="0.015" selected>보통</option>
+      <option value="0.008">높게</option>
+    </select>
+  </label>
   <details>
     <summary>함께 노는 방법</summary>
-    <p>“준비…” 하고 잠깐 쉬어 보세요. 아이가 버튼을 누르거나 손짓하거나 작은 소리를 내면 함께 차를 움직여요. 잠깐 기다렸다가 어른이 먼저 눌러도 좋아요.</p>
-    <p>마이크를 켜면 ‘아’, ‘으’ 같은 소리에 반응해요. 주변 소리도 감지할 수 있어요. 마이크 입력은 이 기기에서 소리 크기를 확인하는 데만 쓰고 녹음하거나 전송하지 않아요.</p>
-    <p>아이가 낸 소리를 따라 하거나 화면에 나온 “부웅”, “빵빵”, “쏙”을 차례로 들려주세요.</p>
+    <p>“아”, “으”처럼 편한 소리를 내 보세요. 소리가 들리면 자동차가 앞으로 가고, 조용해지면 그 자리에 멈춰요.</p>
+    <p>주변 소리에도 반응할 수 있어요. 마이크 입력은 이 기기에서 소리 크기를 확인하는 데만 쓰고 녹음하거나 전송하지 않아요.</p>
   </details>
 </main>
 <script>
-const car = document.querySelector('#car');
-const tunnel = document.querySelector('#tunnel');
+const scene = document.querySelector('#scene');
+const street = document.querySelector('#street');
 const cue = document.querySelector('#cue');
-const play = document.querySelector('#play');
-const stop = document.querySelector('#stop');
-const sound = document.querySelector('#sound');
-const modes = document.querySelectorAll('[data-mode]');
-const activities = {
-  race: { ready: '준비!', action: '출발!' },
-  horn: { ready: '경적을 울려요', action: '빵빵!' },
-  tunnel: { ready: '터널을 지나가요', action: '쏙 들어가요' }
-};
-let mode = 'race';
-let position = 0;
-let timer;
-let audio;
-let muted = false;
+const pen = street.getContext('2d');
+const buildings = [
+  { roof: '#d77856', wall: '#f4c6a3', width: 0.85, height: 55 },
+  { roof: '#527d93', wall: '#b9d5df', width: 0.66, height: 66 },
+  { roof: '#9478a9', wall: '#e1caea', width: 0.92, height: 49 },
+  { roof: '#a97942', wall: '#f6da9f', width: 0.74, height: 59 }
+];
+let width = 0;
+let height = 0;
 
-function speak(text) {
-  if (muted || !window.speechSynthesis || !window.SpeechSynthesisUtterance) return;
-  listenAfter = Math.max(listenAfter, performance.now() + 850);
-  const line = new SpeechSynthesisUtterance(text);
-  line.addEventListener('end', () => {
-    listenAfter = Math.max(listenAfter, performance.now() + 250);
-  });
-  line.lang = 'ko-KR';
-  line.rate = 0.85;
-  line.volume = 0.7;
-  speechSynthesis.cancel();
-  speechSynthesis.speak(line);
+function block(color, x, y, w, h) {
+  pen.fillStyle = color;
+  pen.fillRect(x, y, w, h);
 }
 
-function honk() {
-  if (muted) return;
-  const AudioEngine = window.AudioContext || window.webkitAudioContext;
-  if (!AudioEngine) {
-    speak('빵빵');
-    return;
+function drawBuilding(edge, y, span, building, leftSide) {
+  const w = span * building.width;
+  const x = leftSide ? edge - w : edge;
+  const h = building.height;
+  block('#00000024', x + 4, y + 6, w, h);
+  block(building.wall, x, y + 9, w, h - 9);
+  block(building.roof, x, y, w, 20);
+  for (let i = 1; i <= 3; i++) {
+    block('#314e55', x + w * i / 4 - w * 0.06, y + 27, w * 0.12, 10);
   }
-  listenAfter = Math.max(listenAfter, performance.now() + 600);
-  audio ??= new AudioEngine();
-  audio.resume().catch(() => {});
-  for (const offset of [0, 0.19]) {
-    const from = audio.currentTime + offset;
-    const tone = audio.createOscillator();
-    const volume = audio.createGain();
-    tone.frequency.value = 350;
-    volume.gain.setValueAtTime(0, from);
-    volume.gain.linearRampToValueAtTime(0.09, from + 0.025);
-    volume.gain.linearRampToValueAtTime(0, from + 0.13);
-    tone.connect(volume).connect(audio.destination);
-    tone.start(from);
-    tone.stop(from + 0.14);
-  }
+  block('#526061', x + w * 0.42, y + h - 11, w * 0.16, 11);
 }
 
-function reset() {
-  clearTimeout(timer);
-  window.speechSynthesis?.cancel();
-  if (audio?.state === 'running') audio.suspend().catch(() => {});
-  car.classList.remove('forward', 'inside');
-  position = 0;
-  stop.disabled = true;
-  play.disabled = false;
-  cue.textContent = activities[mode].ready;
-  play.textContent = activities[mode].action;
+function drawStreet() {
+  const mid = width / 2;
+  const road = width * 0.38;
+  const left = mid - road / 2;
+  const right = mid + road / 2;
+  const span = Math.min(left - 15, 130);
+  block('#abc78f', 0, 0, width, height);
+  block('#f0e2cb', left - 7, 0, road + 14, height);
+  block('#495658', left, 0, road, height);
+
+  const approach = Math.min(distance, height * 0.23);
+  const scroll = Math.max(0, distance - approach);
+  for (let y = scroll % 65 - 65; y < height; y += 65) {
+    block('#fff0cb', mid - 2, y, 4, 27);
+  }
+
+  const stride = 103;
+  const shift = scroll % stride;
+  const passed = Math.floor(scroll / stride);
+  for (let row = -1; row * stride + shift < height; row++) {
+    const index = ((row - passed) % buildings.length + buildings.length) % buildings.length;
+    const y = row * stride + shift;
+    drawBuilding(left - 12, y + 5, span, buildings[index], true);
+    drawBuilding(right + 12, y + 28, span, buildings[(index + 2) % buildings.length], false);
+  }
+
+  const carY = height * 0.76 - approach;
+  pen.save();
+  pen.translate(mid, carY);
+  const scale = Math.min(1.22, width / 330, height / 280);
+  pen.scale(scale, scale);
+  block('#00000035', -17, -29, 39, 69);
+  for (const x of [-23, 17]) {
+    block('#273234', x, -25, 6, 15);
+    block('#273234', x, 15, 6, 15);
+  }
+  pen.fillStyle = '#bf3a34';
+  pen.beginPath();
+  pen.roundRect(-19, -35, 38, 70, 9);
+  pen.fill();
+  block('#ffe7a2', -15, -31, 9, 5);
+  block('#ffe7a2', 6, -31, 9, 5);
+  block('#cce4e9', -13, -18, 26, 13);
+  block('#8bb5c0', -13, 12, 26, 11);
+  block('#861f22', -16, 29, 8, 4);
+  block('#861f22', 8, 29, 8, 4);
+  pen.restore();
 }
 
-for (const button of modes) {
-  button.addEventListener('click', () => {
-    mode = button.dataset.mode;
-    for (const option of modes) option.setAttribute('aria-pressed', String(option === button));
-    tunnel.hidden = mode !== 'tunnel';
-    reset();
-  });
+function resizeStreet() {
+  width = street.clientWidth;
+  height = street.clientHeight;
+  const ratio = Math.min(window.devicePixelRatio || 1, 2);
+  street.width = Math.round(width * ratio);
+  street.height = Math.round(height * ratio);
+  pen.setTransform(ratio, 0, 0, ratio, 0, 0);
+  drawStreet();
 }
-
-play.addEventListener('click', () => {
-  stop.disabled = false;
-  if (mode === 'horn') {
-    cue.textContent = '빵빵!';
-    honk();
-    return;
-  }
-
-  if (play.disabled) return;
-  clearTimeout(timer);
-  position = position === 2 ? 0 : 1;
-  car.classList.toggle('forward', position === 1);
-  car.classList.remove('inside');
-  if (position === 0) {
-    cue.textContent = mode === 'tunnel' ? '나왔다!' : '다시 준비!';
-    play.textContent = activities[mode].action;
-    if (mode === 'tunnel') speak('나왔다');
-    return;
-  }
-
-  cue.textContent = mode === 'tunnel' ? '쏙!' : '부우웅!';
-  speak(mode === 'tunnel' ? '쏙' : '부우웅');
-  play.disabled = true;
-  timer = setTimeout(() => {
-    play.disabled = false;
-    if (mode === 'tunnel') {
-      position = 2;
-      car.classList.add('inside');
-      play.textContent = '나와!';
-    } else {
-      position = 0;
-      car.classList.remove('forward');
-      play.textContent = '한 번 더!';
-    }
-  }, mode === 'tunnel' ? 760 : 900);
-});
-
-stop.addEventListener('click', () => {
-  reset();
-  cue.textContent = '멈췄어요';
-  speak('멈춰');
-});
-sound.addEventListener('click', () => {
-  muted = !muted;
-  sound.setAttribute('aria-pressed', String(!muted));
-  sound.textContent = muted ? '소리 꺼짐' : '소리 켜짐';
-  if (muted) {
-    window.speechSynthesis?.cancel();
-    if (audio?.state === 'running') audio.suspend().catch(() => {});
-  }
-});
-
 const micButton = document.querySelector('#mic');
 const micStatus = document.querySelector('#mic-status');
 const micOptions = document.querySelector('#mic-options');
@@ -235,14 +151,16 @@ let micRequest = 0;
 let micStream;
 let micContext;
 let micFrame;
-let listenAfter = 0;
+let distance = 0;
 
 function showMicState(state, message) {
   micState = state;
+  scene.classList.remove('moving');
   micButton.setAttribute('aria-pressed', String(state === 'on'));
   micButton.textContent = { off: '마이크 켜기', starting: '마이크 취소', on: '마이크 끄기' }[state];
   micOptions.hidden = state !== 'on';
   micStatus.textContent = message;
+  cue.textContent = state === 'on' ? '소리를 내 봐요!' : '준비!';
 }
 
 function stopMicrophone(message = '마이크가 꺼졌어요.') {
@@ -257,31 +175,36 @@ function stopMicrophone(message = '마이크가 꺼졌어요.') {
 
 function listen(analyser) {
   const samples = new Float32Array(analyser.fftSize);
-  let quietSince;
   let loudSince;
-  let armed = false;
+  let lastSound;
+  let previousTime;
+  let moving = false;
 
   function readFrame(now) {
-    if (play.disabled || now < listenAfter || window.speechSynthesis?.speaking) {
-      quietSince = loudSince = undefined;
-      armed = false;
+    const elapsed = Math.min(now - (previousTime ?? now), 50);
+    previousTime = now;
+    analyser.getFloatTimeDomainData(samples);
+    let energy = 0;
+    for (const sample of samples) energy += sample * sample;
+    const audible = Math.sqrt(energy / samples.length) >= Number(sensitivity.value);
+
+    if (audible) {
+      loudSince ??= now;
+      lastSound = now;
     } else {
-      analyser.getFloatTimeDomainData(samples);
-      let energy = 0;
-      for (const sample of samples) energy += sample * sample;
-      const level = Math.sqrt(energy / samples.length);
-      if (level < Number(sensitivity.value)) {
-        loudSince = undefined;
-        quietSince ??= now;
-        if (now - quietSince >= 140) armed = true;
-      } else {
-        quietSince = undefined;
-        loudSince ??= now;
-        if (armed && now - loudSince >= 40) {
-          armed = false;
-          play.click();
-        }
-      }
+      loudSince = undefined;
+    }
+
+    const driving = audible && now - loudSince >= 32
+      || moving && lastSound !== undefined && now - lastSound < 85;
+    if (driving !== moving) {
+      moving = driving;
+      scene.classList.toggle('moving', moving);
+      cue.textContent = moving ? '부우웅!' : '소리를 내 봐요!';
+    }
+    if (moving) {
+      distance += elapsed * 0.34;
+      drawStreet();
     }
     micFrame = requestAnimationFrame(readFrame);
   }
@@ -321,13 +244,13 @@ async function startMicrophone() {
     stream.getAudioTracks().forEach(track => track.addEventListener('ended', () => {
       stopMicrophone('마이크 연결이 끊겼어요. 다시 켤 수 있어요.');
     }));
-    showMicState('on', '듣고 있어요. 잠깐 조용해진 뒤 소리를 내 보세요.');
+    showMicState('on', '듣고 있어요. 소리를 내면 자동차가 달려요.');
     listen(analyser);
   } catch (error) {
     if (request !== micRequest) return;
     stopMicrophone(error.name === 'NotAllowedError'
       ? '마이크 권한을 허용하면 소리에 반응해요.'
-      : '마이크를 시작할 수 없어요. 화면 버튼으로 계속 놀 수 있어요.');
+      : '마이크를 시작할 수 없어요. 연결을 확인하고 다시 켜 주세요.');
   }
 }
 
@@ -339,6 +262,9 @@ window.addEventListener('pagehide', () => stopMicrophone());
 document.addEventListener('visibilitychange', () => {
   if (document.hidden && micState !== 'off') stopMicrophone();
 });
+
+window.addEventListener('resize', resizeStreet);
+resizeStreet();
 </script>
 </body>
 </html>
