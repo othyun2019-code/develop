@@ -28,17 +28,39 @@ details p { margin: 4px 0 }
   #scene { height: 47dvh }
   #mic { min-height: 44px }
 }
+.choices { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 12px; margin-bottom: 8px }
+.choice-group { display: flex; gap: 5px; align-items: center }
+.choice-group button { min-height: 44px; min-width: 44px; padding: 4px 9px; border-radius: 10px; border: 1px solid #a9bdb2; background: #fffdfa; font-weight: 750; cursor: pointer; touch-action: manipulation }
+.choice-group button[aria-pressed="true"] { border-color: #20564b; box-shadow: inset 0 0 0 2px #20564b }
+.scenes button[aria-pressed="true"] { background: #20564b; color: white }
+.paint button { display: grid; place-items: center; padding: 4px }
+.paint span { width: 23px; height: 23px; border-radius: 50%; border: 1px solid #183b3550; background: var(--swatch) }
+.paint button[aria-pressed="true"] span::after { content: '✓'; display: grid; place-items: center; height: 100%; color: var(--check, white); font-size: .9rem }
+@media (max-width: 480px) { #scene { height: clamp(155px, 49dvh, 480px) } }
 </style>
 </head>
 <body>
 <main>
   <h1>부릉부릉 놀이터</h1>
+  <div class="choices">
+    <div class="choice-group scenes" role="group" aria-label="장소 고르기">
+      <button type="button" data-world="city" aria-pressed="true">도시</button>
+      <button type="button" data-world="beach" aria-pressed="false">바닷가</button>
+      <button type="button" data-world="space" aria-pressed="false">우주</button>
+    </div>
+    <div class="choice-group paint" role="group" aria-label="탈것 색깔 고르기">
+      <button type="button" data-paint="red" aria-label="빨강" aria-pressed="true"><span aria-hidden="true" style="--swatch:#bf3a34"></span></button>
+      <button type="button" data-paint="blue" aria-label="파랑" aria-pressed="false"><span aria-hidden="true" style="--swatch:#266bb8"></span></button>
+      <button type="button" data-paint="yellow" aria-label="노랑" aria-pressed="false"><span aria-hidden="true" style="--swatch:#ffc540;--check:#382b16"></span></button>
+      <button type="button" data-paint="purple" aria-label="보라" aria-pressed="false"><span aria-hidden="true" style="--swatch:#854eaa"></span></button>
+    </div>
+  </div>
   <div id="scene">
-    <canvas id="street" role="img" aria-label="양옆에 건물이 있는 길과 위쪽을 향한 빨간 자동차"></canvas>
+    <canvas id="street" role="img" aria-label="도시의 세로 도로를 달리는 자동차"></canvas>
     <p id="cue">준비!</p>
   </div>
   <button id="mic" type="button" aria-pressed="false">마이크 켜기</button>
-  <p id="mic-status" role="status">마이크를 켜면 소리로 자동차를 움직일 수 있어요.</p>
+  <p id="mic-status" role="status">마이크를 켜면 소리로 탈것을 움직일 수 있어요.</p>
   <label id="mic-options" hidden>민감도
     <select id="mic-sensitivity">
       <option value="0.028">낮게</option>
@@ -48,7 +70,7 @@ details p { margin: 4px 0 }
   </label>
   <details>
     <summary>함께 노는 방법</summary>
-    <p>“아”, “으”처럼 편한 소리를 내 보세요. 소리가 들리면 자동차가 앞으로 가고, 조용해지면 그 자리에 멈춰요.</p>
+    <p>“아”, “으”처럼 편한 소리를 내 보세요. 소리가 들리면 탈것이 앞으로 가고, 조용해지면 그 자리에 멈춰요.</p>
     <p>주변 소리에도 반응할 수 있어요. 마이크 입력은 이 기기에서 소리 크기를 확인하는 데만 쓰고 녹음하거나 전송하지 않아요.</p>
   </details>
 </main>
@@ -63,6 +85,19 @@ const buildings = [
   { roof: '#9478a9', wall: '#e1caea', width: 0.92, height: 49 },
   { roof: '#a97942', wall: '#f6da9f', width: 0.74, height: 59 }
 ];
+const worlds = {
+  city: { label: '도시의 세로 도로를 달리는 자동차', sound: '부우웅!' },
+  beach: { label: '바닷가 모랫길을 달리는 자동차', sound: '부우웅!' },
+  space: { label: '별과 행성 사이를 위로 날아가는 우주선', sound: '슈우웅!' }
+};
+const colors = {
+  red: { body: '#bf3a34', edge: '#861f22' },
+  blue: { body: '#266bb8', edge: '#174274' },
+  yellow: { body: '#ffc540', edge: '#a46411' },
+  purple: { body: '#854eaa', edge: '#54346c' }
+};
+let world = 'city';
+let paint = colors.red;
 let width = 0;
 let height = 0;
 
@@ -84,7 +119,93 @@ function drawBuilding(edge, y, span, building, leftSide) {
   block('#526061', x + w * 0.42, y + h - 11, w * 0.16, 11);
 }
 
-function drawStreet() {
+function circle(color, x, y, radius) {
+  pen.fillStyle = color;
+  pen.beginPath();
+  pen.arc(x, y, radius, 0, Math.PI * 2);
+  pen.fill();
+}
+
+function wrap(value, period) {
+  return ((value % period) + period) % period;
+}
+
+function drawBeach(scroll) {
+  block('#efd7a1', 0, 0, width, height);
+  block('#e5ba76', width * 0.31, 0, width * 0.37, height);
+  block('#76d4c9', width * 0.72, 0, width * 0.28, height);
+  block('#45aeb9', width * 0.8, 0, width * 0.2, height);
+
+  for (let y = scroll % 82 - 82; y < height; y += 82) {
+    block('#e0fbdf', width * 0.73, y, width * 0.12, 3);
+    block('#a3ece1', width * 0.85, y + 32, width * 0.1, 3);
+    block('#d3a96a', width * 0.34, y + 20, 12, 2);
+  }
+
+  const stride = 125;
+  for (let row = -1; row * stride + scroll % stride < height; row++) {
+    const y = row * stride + scroll % stride;
+    const x = width * 0.17;
+    const index = wrap(row - Math.floor(scroll / stride), 3);
+    const towel = ['#e88061', '#69a99d', '#b189b6'][index];
+    block('#fff7dd', x - 14, y + 20, 28, 34);
+    block(towel, x - 9, y + 24, 18, 26);
+    circle('#b58e65', x + 4, y + 8, 19);
+    circle(towel, x, y + 4, 19);
+    circle('#fff7dd', x, y + 4, 8);
+  }
+}
+
+function drawSpace(scroll) {
+  block('#1b2145', 0, 0, width, height);
+  const period = height + 150;
+  for (let i = 0; i < 40; i++) {
+    const x = (i * 73 % 197) / 197 * width;
+    const y = wrap(i * 47 + scroll * 0.6, period) - 65;
+    const size = i % 5 === 0 ? 4 : 2;
+    block(i % 3 === 0 ? '#f9da9e' : '#b7c5ef', x, y, size, size);
+  }
+
+  const planetSize = Math.min(32, width * 0.085);
+  const first = wrap(85 + scroll * 0.85, period) - 55;
+  const second = wrap(period * 0.62 + scroll * 0.85, period) - 55;
+  circle('#f0b180', width * 0.18, first, planetSize);
+  circle('#ffe0a9', width * 0.18 - planetSize * 0.3, first - 5, planetSize * 0.45);
+  circle('#826fbe', width * 0.82, second, planetSize * 0.8);
+  block('#d3acf3', width * 0.82 - planetSize, second + 2, planetSize * 2, 4);
+}
+
+function drawRocket() {
+  if (scene.classList.contains('moving')) {
+    pen.fillStyle = '#ffb95c';
+    pen.beginPath();
+    pen.moveTo(-8, 24);
+    pen.lineTo(0, 43);
+    pen.lineTo(8, 24);
+    pen.fill();
+    circle('#ffedaa', 0, 27, 5);
+  }
+  pen.fillStyle = paint.edge;
+  pen.beginPath();
+  pen.moveTo(-10, 0);
+  pen.lineTo(-23, 25);
+  pen.lineTo(23, 25);
+  pen.lineTo(10, 0);
+  pen.closePath();
+  pen.fill();
+  pen.fillStyle = paint.body;
+  pen.beginPath();
+  pen.moveTo(0, -39);
+  pen.quadraticCurveTo(25, -14, 12, 26);
+  pen.lineTo(-12, 26);
+  pen.quadraticCurveTo(-25, -14, 0, -39);
+  pen.fill();
+  circle('#20365a', 0, -7, 10);
+  circle('#bde5f4', 0, -7, 7);
+  circle('#effbff', -2, -9, 2);
+}
+
+function drawCity(scroll) {
   const mid = width / 2;
   const road = width * 0.38;
   const left = mid - road / 2;
@@ -94,8 +215,6 @@ function drawStreet() {
   block('#f0e2cb', left - 7, 0, road + 14, height);
   block('#495658', left, 0, road, height);
 
-  const approach = Math.min(distance, height * 0.23);
-  const scroll = Math.max(0, distance - approach);
   for (let y = scroll % 65 - 65; y < height; y += 65) {
     block('#fff0cb', mid - 2, y, 4, 27);
   }
@@ -110,17 +229,32 @@ function drawStreet() {
     drawBuilding(right + 12, y + 28, span, buildings[(index + 2) % buildings.length], false);
   }
 
+}
+
+function drawStreet() {
+  const approach = Math.min(distance, height * 0.23);
+  const scroll = distance - approach;
+  if (world === 'city') drawCity(scroll);
+  if (world === 'beach') drawBeach(scroll);
+  if (world === 'space') drawSpace(scroll);
+
   const carY = height * 0.76 - approach;
   pen.save();
-  pen.translate(mid, carY);
+  pen.translate(width / 2, carY);
   const scale = Math.min(1.22, width / 330, height / 280);
   pen.scale(scale, scale);
+  if (world === 'space') drawRocket();
+  else drawCar();
+  pen.restore();
+}
+
+function drawCar() {
   block('#00000035', -17, -29, 39, 69);
   for (const x of [-23, 17]) {
     block('#273234', x, -25, 6, 15);
     block('#273234', x, 15, 6, 15);
   }
-  pen.fillStyle = '#bf3a34';
+  pen.fillStyle = paint.body;
   pen.beginPath();
   pen.roundRect(-19, -35, 38, 70, 9);
   pen.fill();
@@ -128,9 +262,8 @@ function drawStreet() {
   block('#ffe7a2', 6, -31, 9, 5);
   block('#cce4e9', -13, -18, 26, 13);
   block('#8bb5c0', -13, 12, 26, 11);
-  block('#861f22', -16, 29, 8, 4);
-  block('#861f22', 8, 29, 8, 4);
-  pen.restore();
+  block(paint.edge, -16, 29, 8, 4);
+  block(paint.edge, 8, 29, 8, 4);
 }
 
 function resizeStreet() {
@@ -156,6 +289,7 @@ let distance = 0;
 function showMicState(state, message) {
   micState = state;
   scene.classList.remove('moving');
+  drawStreet();
   micButton.setAttribute('aria-pressed', String(state === 'on'));
   micButton.textContent = { off: '마이크 켜기', starting: '마이크 취소', on: '마이크 끄기' }[state];
   micOptions.hidden = state !== 'on';
@@ -200,7 +334,8 @@ function listen(analyser) {
     if (driving !== moving) {
       moving = driving;
       scene.classList.toggle('moving', moving);
-      cue.textContent = moving ? '부우웅!' : '소리를 내 봐요!';
+      cue.textContent = moving ? worlds[world].sound : '소리를 내 봐요!';
+      if (!moving) drawStreet();
     }
     if (moving) {
       distance += elapsed * 0.34;
@@ -244,7 +379,7 @@ async function startMicrophone() {
     stream.getAudioTracks().forEach(track => track.addEventListener('ended', () => {
       stopMicrophone('마이크 연결이 끊겼어요. 다시 켤 수 있어요.');
     }));
-    showMicState('on', '듣고 있어요. 소리를 내면 자동차가 달려요.');
+    showMicState('on', '듣고 있어요. 소리를 내면 앞으로 가요.');
     listen(analyser);
   } catch (error) {
     if (request !== micRequest) return;
@@ -262,6 +397,25 @@ window.addEventListener('pagehide', () => stopMicrophone());
 document.addEventListener('visibilitychange', () => {
   if (document.hidden && micState !== 'off') stopMicrophone();
 });
+
+const worldButtons = document.querySelectorAll('[data-world]');
+const paintButtons = document.querySelectorAll('[data-paint]');
+for (const button of worldButtons) {
+  button.addEventListener('click', () => {
+    world = button.dataset.world;
+    for (const option of worldButtons) option.setAttribute('aria-pressed', String(option === button));
+    street.setAttribute('aria-label', worlds[world].label);
+    if (scene.classList.contains('moving')) cue.textContent = worlds[world].sound;
+    drawStreet();
+  });
+}
+for (const button of paintButtons) {
+  button.addEventListener('click', () => {
+    paint = colors[button.dataset.paint];
+    for (const option of paintButtons) option.setAttribute('aria-pressed', String(option === button));
+    drawStreet();
+  });
+}
 
 window.addEventListener('resize', resizeStreet);
 resizeStreet();
