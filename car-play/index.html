@@ -16,8 +16,8 @@ h1 { font-size: clamp(1.4rem, 5vw, 2rem); margin: 0 0 8px }
 .moving #cue { background: #20564b; color: white }
 button, select { font: inherit; color: inherit }
 button:focus-visible, select:focus-visible { outline: 3px solid #9b420d; outline-offset: 3px }
-#mic { width: 100%; min-height: 56px; margin-top: 8px; border: 0; border-radius: 14px; background: #20564b; color: white; font-size: 1.2rem; font-weight: 750; cursor: pointer; touch-action: manipulation }
-#mic[aria-pressed="true"] { background: #e1e8dd; color: #183b35 }
+#mic { position: absolute; left: 50%; top: 38%; transform: translate(-50%, -50%); min-width: 138px; min-height: 56px; padding: 8px 22px; border: 2px solid #fffdfa; border-radius: 15px; background: #20564b; color: white; font-size: clamp(1.2rem, 5vw, 1.6rem); font-weight: 800; cursor: pointer; touch-action: manipulation }
+#mic[aria-pressed="true"] { left: auto; top: auto; right: 10px; bottom: 10px; transform: none; min-width: 0; min-height: 44px; padding: 7px 10px; background: #e1e8dd; color: #183b35; font-size: .9rem }
 #mic-status { margin: 6px 0; min-height: 1.35em; font-size: .88rem }
 #mic-options { display: inline-flex; align-items: center; gap: 7px; min-height: 36px; font-size: .88rem }
 #mic-options[hidden] { display: none }
@@ -58,8 +58,8 @@ details p { margin: 4px 0 }
   <div id="scene">
     <canvas id="street" role="img" aria-label="도시의 세로 도로를 달리는 자동차"></canvas>
     <p id="cue">시작 버튼을 눌러요</p>
+    <button id="mic" type="button" aria-pressed="false">시작</button>
   </div>
-  <button id="mic" type="button" aria-pressed="false">시작</button>
   <p id="mic-status" role="status">시작하면 마이크로 소리를 들어요.</p>
   <label id="mic-options" hidden>민감도
     <select id="mic-sensitivity">
