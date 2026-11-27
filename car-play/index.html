@@ -48,24 +48,25 @@ details p { margin: 4px 0 }
 .sort-car-space { display: grid; place-items: center; height: clamp(96px, 18dvh, 145px) }
 #sort-car { touch-action: none; cursor: grab; user-select: none; display: block; width: 145px; height: 86px; position: relative; z-index: 1; overflow: visible }
 #sort-car.dragging { cursor: grabbing }
-.basket.drop-target { outline: 3px solid var(--rim); outline-offset: 2px }
+.basket.drop-target .basket-shape { transform: scale(1.07) }
 .sort-car-body { position: absolute; inset: 8px 5px 20px; background: var(--car-paint, #bf3a34); border-radius: 16px; clip-path: polygon(0 51%, 9% 40%, 24% 34%, 40% 0, 69% 0, 84% 36%, 100% 52%, 100% 100%, 0 100%) }
 .sort-car-window { position: absolute; inset: 6px 30px auto 43px; height: 17px; background: linear-gradient(90deg, #d8edf9 0 46%, transparent 46% 53%, #d8edf9 53%); clip-path: polygon(0 100%, 25% 0, 74% 0, 100% 100%) }
 .sort-wheel { position: absolute; top: 53px; width: 25px; height: 25px; border-radius: 50%; background: radial-gradient(circle, #c8d6d4 27%, #273234 30%) }
 .sort-wheel-front { right: 19px }
 .sort-wheel-back { left: 21px }
 .baskets { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(8px, 3vw, 25px); max-width: 450px; margin: 0 auto }
-.basket { display: grid; justify-items: center; align-content: center; gap: 6px; min-height: 112px; padding: 9px 4px; background: var(--pale); border: 2px solid var(--rim); border-radius: 16px; color: #25363a; font-weight: 800; cursor: pointer; touch-action: manipulation }
+.basket { display: grid; justify-items: center; align-content: center; gap: 6px; min-height: 112px; padding: 9px 4px; background: transparent; border: 0; border-radius: 16px; color: #25363a; font-weight: 800; cursor: pointer; touch-action: manipulation }
 .basket:active { scale: .98 }
 .basket-red { --pale: #fff0ed; --rim: #a82c30; --bin: #d94245 }
 .basket-blue { --pale: #eaf3ff; --rim: #1d5493; --bin: #377bc4 }
-.basket-shape { position: relative; display: block; width: min(90%, 125px); height: 56px; isolation: isolate }
+.basket-shape { position: relative; display: block; width: min(90%, 125px); height: 66px; isolation: isolate }
 .basket-shape::before { content: ""; position: absolute; inset: 12px 0 0; border-radius: 8px 8px 14px 14px; background: var(--rim); clip-path: polygon(0 0, 100% 0, 88% 100%, 12% 100%) }
 .basket-shape::after { content: ""; position: absolute; z-index: 2; inset: 33px 5% 0; border-top: 3px solid var(--rim); border-radius: 0 0 12px 12px; background: repeating-linear-gradient(90deg, var(--bin) 0 10px, var(--rim) 10px 12px); clip-path: polygon(0 0, 100% 0, 91% 100%, 9% 100%) }
 .basket-cars { position: absolute; z-index: 1; top: 18px; inset-inline: 10%; display: flex; justify-content: center; gap: 2px }
 .basket-car { width: min(31%, 28px); height: 21px; background: var(--mini-paint); border-radius: 3px; clip-path: polygon(0 50%, 23% 42%, 41% 0, 71% 0, 86% 39%, 100% 55%, 100% 90%, 0 90%); animation: settle-car 210ms ease-out both }
 .basket-car::after { content: ""; display: block; margin: 3px auto 0; width: 37%; height: 6px; background: #e5f5f8; border-radius: 2px }
-.basket-count { color: #354d48; font-size: .8rem; line-height: 1 }
+.basket-name { position: absolute; z-index: 3; inset-inline: 0; bottom: 7px; color: #fff; font-size: .92rem; font-weight: 850; line-height: 1; text-shadow: 0 1px 2px #0009 }
+.basket-count { display: grid; place-items: center; min-width: 44px; min-height: 44px; padding: 3px 8px; border-radius: 999px; background: var(--pale); color: var(--rim); font-size: clamp(1.6rem, 6vw, 2rem); font-weight: 850; line-height: 1; font-variant-numeric: tabular-nums }
 @keyframes settle-car { from { transform: translateY(-8px) } to { transform: translateY(0) } }
 @media (prefers-reduced-motion: reduce) { .basket-car { animation: none } }
 </style>
@@ -121,13 +122,11 @@ details p { margin: 4px 0 }
     </div>
     <div class="baskets" role="group" aria-label="바구니 고르기">
       <button type="button" class="basket basket-red" data-basket="red">
-        <span class="basket-shape" aria-hidden="true"><span class="basket-cars"></span></span>
-        <span class="basket-name">빨간 바구니</span>
+        <span class="basket-shape"><span class="basket-cars" aria-hidden="true"></span><span class="basket-name">빨강</span></span>
         <span class="basket-count" hidden></span>
       </button>
       <button type="button" class="basket basket-blue" data-basket="blue">
-        <span class="basket-shape" aria-hidden="true"><span class="basket-cars"></span></span>
-        <span class="basket-name">파란 바구니</span>
+        <span class="basket-shape"><span class="basket-cars" aria-hidden="true"></span><span class="basket-name">파랑</span></span>
         <span class="basket-count" hidden></span>
       </button>
     </div>
@@ -499,7 +498,7 @@ function finishSortDrop(basket) {
     cars.append(car);
   }
   const counter = basket.querySelector('.basket-count');
-  counter.textContent = count + '대';
+  counter.textContent = String(count);
   counter.hidden = false;
   nextSortCar();
 }
