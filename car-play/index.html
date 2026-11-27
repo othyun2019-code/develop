@@ -39,11 +39,36 @@ details p { margin: 4px 0 }
 @media (max-width: 480px) { #scene { height: clamp(155px, 49dvh, 480px) } }
 #mic[aria-pressed="false"] { width: 84px; height: 84px; min-width: 0; padding: 0; border-radius: 50%; background: #c72c32; }
 @media (max-height: 480px) and (orientation: landscape) { #mic[aria-pressed="false"] { width: 64px; height: 64px; } }
+[hidden] { display: none !important }
+.activity-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 9px }
+.activity-tabs button { min-height: 44px; padding: 6px 10px; border-radius: 12px; border: 1px solid #a9bdb2; background: #fffdfa; font-weight: 750; cursor: pointer; touch-action: manipulation }
+.activity-tabs button[aria-pressed="true"] { background: #20564b; border-color: #20564b; color: white }
+#sort-panel { min-height: min(54dvh, 430px); padding: clamp(12px, 3vw, 24px); background: #fffdfa; border: 1px solid #dedbcc; border-radius: 20px; text-align: center }
+#sort-status { min-height: 2.8em; margin: 0; font-size: clamp(1rem, 4vw, 1.24rem); font-weight: 750 }
+.sort-car-space { display: grid; place-items: center; height: clamp(96px, 18dvh, 145px) }
+#sort-car { display: block; width: 145px; height: 86px; position: relative; z-index: 1; overflow: visible }
+.sort-car-body { position: absolute; inset: 8px 5px 20px; background: var(--car-paint, #bf3a34); border-radius: 16px; clip-path: polygon(0 51%, 9% 40%, 24% 34%, 40% 0, 69% 0, 84% 36%, 100% 52%, 100% 100%, 0 100%) }
+.sort-car-window { position: absolute; inset: 6px 30px auto 43px; height: 17px; background: linear-gradient(90deg, #d8edf9 0 46%, transparent 46% 53%, #d8edf9 53%); clip-path: polygon(0 100%, 25% 0, 74% 0, 100% 100%) }
+.sort-wheel { position: absolute; top: 53px; width: 25px; height: 25px; border-radius: 50%; background: radial-gradient(circle, #c8d6d4 27%, #273234 30%) }
+.sort-wheel-front { right: 19px }
+.sort-wheel-back { left: 21px }
+.baskets { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(8px, 3vw, 25px); max-width: 450px; margin: 0 auto }
+.basket { display: grid; justify-items: center; align-content: center; gap: 6px; min-height: 112px; padding: 9px 4px; background: var(--pale); border: 2px solid var(--rim); border-radius: 16px; color: #25363a; font-weight: 800; cursor: pointer; touch-action: manipulation }
+.basket:active { scale: .98 }
+.basket-red { --pale: #fff0ed; --rim: #a82c30; --bin: #d94245 }
+.basket-blue { --pale: #eaf3ff; --rim: #1d5493; --bin: #377bc4 }
+.basket-shape { position: relative; width: min(78%, 112px); height: 45px; border-top: 8px solid var(--rim); border-radius: 6px 6px 14px 14px; background: repeating-linear-gradient(90deg, var(--bin) 0 10px, var(--rim) 10px 12px); clip-path: polygon(0 0, 100% 0, 89% 100%, 11% 100%) }
+.basket-shape::before { content: ""; position: absolute; inset: 13px 0 auto; height: 2px; background: var(--rim) }
 </style>
 </head>
 <body>
 <main>
   <h1>부릉부릉 놀이터</h1>
+  <nav class="activity-tabs" aria-label="놀이 고르기">
+    <button type="button" data-activity="drive" aria-controls="drive-panel" aria-pressed="true">소리로 달리기</button>
+    <button type="button" data-activity="sort" aria-controls="sort-panel" aria-pressed="false">색깔 분류</button>
+  </nav>
+  <section id="drive-panel" aria-label="소리로 달리기">
   <div class="choices">
     <div class="choice-group scenes" role="group" aria-label="장소 고르기">
       <button type="button" data-world="city" aria-pressed="true">도시</button>
@@ -75,6 +100,25 @@ details p { margin: 4px 0 }
     <p>시작을 누르고 마이크 사용을 허용해 주세요. “아”, “으”처럼 편한 소리를 내 보세요. 소리가 들리면 탈것이 앞으로 가고, 조용해지면 그 자리에 멈춰요.</p>
     <p>주변 소리에도 반응할 수 있어요. 마이크 입력은 이 기기에서 소리 크기를 확인하는 데만 쓰고 녹음하거나 전송하지 않아요.</p>
   </details>
+  </section>
+  <section id="sort-panel" aria-label="색깔 분류" hidden>
+    <p id="sort-status" role="status">자동차와 같은 색 바구니를 눌러요.</p>
+    <div class="sort-car-space">
+      <div id="sort-car" role="img" aria-label="빨간 자동차">
+        <div class="sort-car-body" aria-hidden="true"><div class="sort-car-window"></div></div>
+        <span class="sort-wheel sort-wheel-front" aria-hidden="true"></span>
+        <span class="sort-wheel sort-wheel-back" aria-hidden="true"></span>
+      </div>
+    </div>
+    <div class="baskets" role="group" aria-label="바구니 고르기">
+      <button type="button" class="basket basket-red" data-basket="red">
+        <span class="basket-shape" aria-hidden="true"></span>빨간 바구니
+      </button>
+      <button type="button" class="basket basket-blue" data-basket="blue">
+        <span class="basket-shape" aria-hidden="true"></span>파란 바구니
+      </button>
+    </div>
+  </section>
 </main>
 <script>
 const scene = document.querySelector('#scene');
@@ -419,7 +463,72 @@ for (const button of paintButtons) {
   });
 }
 
-window.addEventListener('resize', resizeStreet);
+const drivePanel = document.querySelector('#drive-panel');
+const sortPanel = document.querySelector('#sort-panel');
+const activityButtons = document.querySelectorAll('[data-activity]');
+const basketButtons = document.querySelectorAll('[data-basket]');
+const sortCar = document.querySelector('#sort-car');
+const sortStatus = document.querySelector('#sort-status');
+const sortNames = { red: '빨간 자동차', blue: '파란 자동차' };
+const sortSequence = ['red', 'blue', 'blue', 'red'];
+let sortTurn = 0;
+let sortAnimation;
+
+function nextSortCar() {
+  sortTurn = (sortTurn + 1) % sortSequence.length;
+  const sortColor = sortSequence[sortTurn];
+  sortCar.style.setProperty('--car-paint', colors[sortColor].body);
+  sortCar.setAttribute('aria-label', sortNames[sortColor]);
+  sortStatus.textContent = '잘 넣었어요! 다음 자동차도 같은 색 바구니에 넣어요.';
+}
+
+for (const basket of basketButtons) {
+  basket.addEventListener('click', async () => {
+    if (sortAnimation) return;
+    if (basket.dataset.basket !== sortSequence[sortTurn]) {
+      sortStatus.textContent = '자동차와 같은 색을 찾아봐요.';
+      return;
+    }
+    if (!sortCar.animate || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      nextSortCar();
+      return;
+    }
+
+    const car = sortCar.getBoundingClientRect();
+    const bin = basket.querySelector('.basket-shape').getBoundingClientRect();
+    const x = bin.left + bin.width / 2 - (car.left + car.width / 2);
+    const y = bin.top + bin.height / 2 - (car.top + car.height / 2);
+    const animation = sortCar.animate([
+      { transform: 'translate(0, 0) scale(1)', opacity: 1 },
+      { transform: 'translate(' + x + 'px, ' + y + 'px) scale(.32)', opacity: 0.2 }
+    ], { duration: 380, easing: 'ease-in-out' });
+    sortAnimation = animation;
+    try {
+      await animation.finished;
+      nextSortCar();
+    } catch {
+      // The child switched activities while the car was moving.
+    } finally {
+      if (sortAnimation === animation) sortAnimation = undefined;
+    }
+  });
+}
+
+for (const button of activityButtons) {
+  button.addEventListener('click', () => {
+    const sorting = button.dataset.activity === 'sort';
+    if (sorting && micState !== 'off') stopMicrophone();
+    if (!sorting) sortAnimation?.cancel();
+    sortPanel.hidden = !sorting;
+    drivePanel.hidden = sorting;
+    for (const option of activityButtons) option.setAttribute('aria-pressed', String(option === button));
+    if (!sorting) resizeStreet();
+  });
+}
+
+window.addEventListener('resize', () => {
+  if (!drivePanel.hidden) resizeStreet();
+});
 resizeStreet();
 </script>
 </body>
