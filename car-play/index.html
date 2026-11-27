@@ -46,7 +46,9 @@ details p { margin: 4px 0 }
 #sort-panel { min-height: min(54dvh, 430px); padding: clamp(12px, 3vw, 24px); background: #fffdfa; border: 1px solid #dedbcc; border-radius: 20px; text-align: center }
 #sort-status { min-height: 2.8em; margin: 0; font-size: clamp(1rem, 4vw, 1.24rem); font-weight: 750 }
 .sort-car-space { display: grid; place-items: center; height: clamp(96px, 18dvh, 145px) }
-#sort-car { display: block; width: 145px; height: 86px; position: relative; z-index: 1; overflow: visible }
+#sort-car { touch-action: none; cursor: grab; user-select: none; display: block; width: 145px; height: 86px; position: relative; z-index: 1; overflow: visible }
+#sort-car.dragging { cursor: grabbing }
+.basket.drop-target { outline: 3px solid var(--rim); outline-offset: 2px }
 .sort-car-body { position: absolute; inset: 8px 5px 20px; background: var(--car-paint, #bf3a34); border-radius: 16px; clip-path: polygon(0 51%, 9% 40%, 24% 34%, 40% 0, 69% 0, 84% 36%, 100% 52%, 100% 100%, 0 100%) }
 .sort-car-window { position: absolute; inset: 6px 30px auto 43px; height: 17px; background: linear-gradient(90deg, #d8edf9 0 46%, transparent 46% 53%, #d8edf9 53%); clip-path: polygon(0 100%, 25% 0, 74% 0, 100% 100%) }
 .sort-wheel { position: absolute; top: 53px; width: 25px; height: 25px; border-radius: 50%; background: radial-gradient(circle, #c8d6d4 27%, #273234 30%) }
@@ -102,7 +104,7 @@ details p { margin: 4px 0 }
   </details>
   </section>
   <section id="sort-panel" aria-label="색깔 분류" hidden>
-    <p id="sort-status" role="status">자동차와 같은 색 바구니를 눌러요.</p>
+    <p id="sort-status" role="status">자동차를 같은 색 바구니로 끌어다 놓아요.</p>
     <div class="sort-car-space">
       <div id="sort-car" role="img" aria-label="빨간 자동차">
         <div class="sort-car-body" aria-hidden="true"><div class="sort-car-window"></div></div>
@@ -479,38 +481,101 @@ function nextSortCar() {
   const sortColor = sortSequence[sortTurn];
   sortCar.style.setProperty('--car-paint', colors[sortColor].body);
   sortCar.setAttribute('aria-label', sortNames[sortColor]);
-  sortStatus.textContent = '잘 넣었어요! 다음 자동차도 같은 색 바구니에 넣어요.';
+  sortStatus.textContent = '잘 넣었어요! 다음 자동차도 끌어다 놓아요.';
 }
 
-for (const basket of basketButtons) {
-  basket.addEventListener('click', async () => {
-    if (sortAnimation) return;
-    if (basket.dataset.basket !== sortSequence[sortTurn]) {
-      sortStatus.textContent = '자동차와 같은 색을 찾아봐요.';
-      return;
-    }
-    if (!sortCar.animate || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      nextSortCar();
-      return;
-    }
+let drag;
 
+function clearDrag() {
+  if (!drag) return;
+  const pointer = drag.pointer;
+  drag = undefined;
+  sortCar.classList.remove('dragging');
+  for (const basket of basketButtons) basket.classList.remove('drop-target');
+  if (sortCar.hasPointerCapture(pointer)) sortCar.releasePointerCapture(pointer);
+}
+
+function basketAt(x, y) {
+  return Array.from(basketButtons).find(basket => {
+    const rect = basket.getBoundingClientRect();
+    return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
+  });
+}
+
+async function placeSortCar(basket, x = 0, y = 0) {
+  const correct = basket?.dataset.basket === sortSequence[sortTurn];
+  if (!correct) sortStatus.textContent = '자동차와 같은 색 바구니에 넣어봐요.';
+  if (!sortCar.animate || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    sortCar.style.transform = '';
+    if (correct) nextSortCar();
+    return;
+  }
+
+  const from = 'translate(' + x + 'px, ' + y + 'px)';
+  let to = 'translate(0, 0)';
+  if (correct) {
     const car = sortCar.getBoundingClientRect();
     const bin = basket.querySelector('.basket-shape').getBoundingClientRect();
-    const x = bin.left + bin.width / 2 - (car.left + car.width / 2);
-    const y = bin.top + bin.height / 2 - (car.top + car.height / 2);
-    const animation = sortCar.animate([
-      { transform: 'translate(0, 0) scale(1)', opacity: 1 },
-      { transform: 'translate(' + x + 'px, ' + y + 'px) scale(.32)', opacity: 0.2 }
-    ], { duration: 380, easing: 'ease-in-out' });
-    sortAnimation = animation;
-    try {
-      await animation.finished;
-      nextSortCar();
-    } catch {
-      // The child switched activities while the car was moving.
-    } finally {
-      if (sortAnimation === animation) sortAnimation = undefined;
+    const targetX = x + bin.left + (bin.width - car.width) / 2 - car.left;
+    const targetY = y + bin.top + (bin.height - car.height) / 2 - car.top;
+    to = 'translate(' + targetX + 'px, ' + targetY + 'px) scale(.32)';
+  }
+  const animation = sortCar.animate([
+    { transform: from, opacity: 1 },
+    { transform: to, opacity: correct ? 0.2 : 1 }
+  ], { duration: correct ? 280 : 220, easing: 'ease-out' });
+  sortAnimation = animation;
+  try {
+    await animation.finished;
+    if (correct) nextSortCar();
+  } catch {
+    // Switching activities cancels the current movement.
+  } finally {
+    if (sortAnimation === animation) {
+      sortCar.style.transform = '';
+      sortAnimation = undefined;
     }
+  }
+}
+
+sortCar.addEventListener('pointerdown', event => {
+  if (drag || sortAnimation || event.button !== 0) return;
+  drag = { pointer: event.pointerId, startX: event.clientX, startY: event.clientY };
+  sortCar.setPointerCapture(event.pointerId);
+  sortCar.classList.add('dragging');
+});
+
+sortCar.addEventListener('pointermove', event => {
+  if (drag?.pointer !== event.pointerId) return;
+  const x = event.clientX - drag.startX;
+  const y = event.clientY - drag.startY;
+  sortCar.style.transform = 'translate(' + x + 'px, ' + y + 'px)';
+  const target = basketAt(event.clientX, event.clientY);
+  for (const basket of basketButtons) basket.classList.toggle('drop-target', basket === target);
+});
+
+sortCar.addEventListener('pointerup', event => {
+  if (drag?.pointer !== event.pointerId) return;
+  const x = event.clientX - drag.startX;
+  const y = event.clientY - drag.startY;
+  sortCar.style.transform = 'translate(' + x + 'px, ' + y + 'px)';
+  const target = basketAt(event.clientX, event.clientY);
+  clearDrag();
+  void placeSortCar(target, x, y);
+});
+
+function cancelSortDrag(event) {
+  if (drag?.pointer !== event.pointerId) return;
+  clearDrag();
+  sortCar.style.transform = '';
+}
+
+sortCar.addEventListener('pointercancel', cancelSortDrag);
+sortCar.addEventListener('lostpointercapture', cancelSortDrag);
+
+for (const basket of basketButtons) {
+  basket.addEventListener('click', event => {
+    if (event.detail === 0 && !drag && !sortAnimation) void placeSortCar(basket);
   });
 }
 
@@ -518,7 +583,11 @@ for (const button of activityButtons) {
   button.addEventListener('click', () => {
     const sorting = button.dataset.activity === 'sort';
     if (sorting && micState !== 'off') stopMicrophone();
-    if (!sorting) sortAnimation?.cancel();
+    if (!sorting) {
+      clearDrag();
+      sortAnimation?.cancel();
+      sortCar.style.transform = '';
+    }
     sortPanel.hidden = !sorting;
     drivePanel.hidden = sorting;
     for (const option of activityButtons) option.setAttribute('aria-pressed', String(option === button));
