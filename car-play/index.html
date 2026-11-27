@@ -54,16 +54,19 @@ details p { margin: 4px 0 }
 .sort-wheel { position: absolute; top: 53px; width: 25px; height: 25px; border-radius: 50%; background: radial-gradient(circle, #c8d6d4 27%, #273234 30%) }
 .sort-wheel-front { right: 19px }
 .sort-wheel-back { left: 21px }
-.baskets { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(8px, 3vw, 25px); max-width: 450px; margin: 0 auto }
+.baskets { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(8px, 3vw, 25px); max-width: 570px; margin: 0 auto }
 .basket { display: grid; justify-items: center; align-content: center; gap: 6px; min-height: 112px; padding: 9px 4px; background: transparent; border: 0; border-radius: 16px; color: #25363a; font-weight: 800; cursor: pointer; touch-action: manipulation }
 .basket:active { scale: .98 }
 .basket-red { --pale: #fff0ed; --rim: #a82c30; --bin: #d94245 }
 .basket-blue { --pale: #eaf3ff; --rim: #1d5493; --bin: #377bc4 }
-.basket-shape { position: relative; display: block; width: min(94%, 144px); height: 76px; isolation: isolate }
+.basket-shape { position: relative; display: block; width: 100%; max-width: 245px; height: 95px; isolation: isolate }
 .basket-shape::before { content: ""; position: absolute; inset: 5px 0 0; border: 4px solid var(--rim); border-radius: 10px 10px 14px 14px; background: #fff4d7; clip-path: polygon(0 0, 100% 0, 88% 100%, 12% 100%) }
-.basket-shape::after { content: ""; position: absolute; z-index: 2; inset: 45px 5% 0; border-top: 3px solid var(--rim); border-radius: 0 0 12px 12px; background: repeating-linear-gradient(90deg, var(--bin) 0 10px, var(--rim) 10px 12px); clip-path: polygon(0 0, 100% 0, 91% 100%, 9% 100%) }
-.basket-cars { position: absolute; z-index: 1; top: 14px; inset-inline: 8%; display: flex; justify-content: center; gap: 3px }
-.basket-car { position: relative; flex: 0 1 34px; min-width: 0; height: 26px; filter: drop-shadow(0 1px 1px #37251b66); animation: settle-car 210ms ease-out both }
+.basket-shape::after { content: ""; position: absolute; z-index: 2; inset: 68px 5% 0; border-top: 3px solid var(--rim); border-radius: 0 0 12px 12px; background: repeating-linear-gradient(90deg, var(--bin) 0 10px, var(--rim) 10px 12px); clip-path: polygon(0 0, 100% 0, 91% 100%, 9% 100%) }
+.basket-cars { position: absolute; z-index: 1; top: 13px; inset-inline: 7%; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); grid-template-rows: repeat(2, 24px); gap: 2px }
+.basket-car { position: relative; width: 100%; max-width: 34px; justify-self: center; min-width: 0; height: 24px; filter: drop-shadow(0 1px 1px #37251b66); animation: settle-car 210ms ease-out both }
+.basket-car:nth-child(-n+5) { grid-row: 2 }
+.basket-car:nth-child(n+6) { grid-row: 1 }
+#sort-restart { min-height: 44px; margin-top: 8px; padding: 6px 16px; border: 0; border-radius: 12px; background: #20564b; color: #fff; font-weight: 750; cursor: pointer }
 .basket-car::before { content: ""; position: absolute; inset: 0 0 4px; background: var(--mini-paint); border-radius: 4px; clip-path: polygon(0 49%, 24% 39%, 39% 0, 70% 0, 86% 38%, 100% 54%, 100% 100%, 0 100%) }
 .basket-car::after { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 22% 84%, #c8d6d4 1px, #253136 2px 4px, transparent 4.5px), radial-gradient(circle at 79% 84%, #c8d6d4 1px, #253136 2px 4px, transparent 4.5px), linear-gradient(#e5f5f8, #e5f5f8) 53% 21% / 32% 6px no-repeat }
 .basket-name { position: absolute; z-index: 3; inset-inline: 0; bottom: 7px; color: #fff; font-size: .92rem; font-weight: 850; line-height: 1; text-shadow: 0 1px 2px #0009 }
@@ -114,6 +117,7 @@ details p { margin: 4px 0 }
   </section>
   <section id="sort-panel" aria-label="색깔 분류" hidden>
     <p id="sort-status" role="status">자동차를 같은 색 바구니로 끌어다 놓아요.</p>
+    <button id="sort-restart" type="button" hidden>다시 분류하기</button>
     <div class="sort-car-space">
       <div id="sort-car" role="img" aria-label="빨간 자동차">
         <div class="sort-car-body" aria-hidden="true"><div class="sort-car-window"></div></div>
@@ -484,6 +488,8 @@ const sortCar = document.querySelector('#sort-car');
 const sortStatus = document.querySelector('#sort-status');
 const sortNames = { red: '빨간 자동차', blue: '파란 자동차' };
 const sortSequence = ['red', 'blue', 'blue', 'red'];
+const sortRestart = document.querySelector('#sort-restart');
+const basketCapacity = 10;
 let sortTurn = 0;
 let sortAnimation;
 const sortedCounts = { red: 0, blue: 0 };
@@ -492,25 +498,46 @@ function finishSortDrop(basket) {
   const color = basket.dataset.basket;
   const count = ++sortedCounts[color];
   const cars = basket.querySelector('.basket-cars');
-  if (cars.childElementCount < 3) {
-    const car = document.createElement('span');
-    car.className = 'basket-car';
-    car.style.setProperty('--mini-paint', colors[color].body);
-    cars.append(car);
-  }
+  const car = document.createElement('span');
+  car.className = 'basket-car';
+  car.style.setProperty('--mini-paint', colors[color].body);
+  cars.append(car);
   const counter = basket.querySelector('.basket-count');
   counter.textContent = String(count);
   counter.hidden = false;
-  nextSortCar();
+  if (sortedCounts.red === basketCapacity && sortedCounts.blue === basketCapacity) {
+    sortCar.hidden = true;
+    sortRestart.hidden = false;
+    sortStatus.textContent = '빨강도 파랑도 10! 바구니를 다 채웠어요.';
+    return;
+  }
+  do {
+    sortTurn = (sortTurn + 1) % sortSequence.length;
+  } while (sortedCounts[sortSequence[sortTurn]] === basketCapacity);
+  showSortCar();
+  sortStatus.textContent = '잘 넣었어요! 다음 자동차도 끌어다 놓아요.';
 }
 
-function nextSortCar() {
-  sortTurn = (sortTurn + 1) % sortSequence.length;
+function showSortCar() {
   const sortColor = sortSequence[sortTurn];
   sortCar.style.setProperty('--car-paint', colors[sortColor].body);
   sortCar.setAttribute('aria-label', sortNames[sortColor]);
-  sortStatus.textContent = '잘 넣었어요! 다음 자동차도 끌어다 놓아요.';
 }
+
+sortRestart.addEventListener('click', () => {
+  for (const basket of basketButtons) {
+    sortedCounts[basket.dataset.basket] = 0;
+    basket.querySelector('.basket-cars').replaceChildren();
+    const counter = basket.querySelector('.basket-count');
+    counter.textContent = '';
+    counter.hidden = true;
+  }
+  sortTurn = 0;
+  showSortCar();
+  sortCar.hidden = false;
+  sortRestart.hidden = true;
+  sortStatus.textContent = '자동차를 같은 색 바구니로 끌어다 놓아요.';
+});
 
 let drag;
 
@@ -605,7 +632,7 @@ sortCar.addEventListener('lostpointercapture', cancelSortDrag);
 
 for (const basket of basketButtons) {
   basket.addEventListener('click', event => {
-    if (event.detail === 0 && !drag && !sortAnimation) void placeSortCar(basket);
+    if (event.detail === 0 && !sortCar.hidden && !drag && !sortAnimation) void placeSortCar(basket);
   });
 }
 
