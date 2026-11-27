@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f6f1e7">
+<title>부릉부릉 놀이터</title>
+<style>
+* { box-sizing: border-box }
+body { margin: 0; background: #f6f1e7; color: #183b35; font: 1rem system-ui,sans-serif }
+main { width: min(100%, 850px); margin: auto; padding: clamp(12px, 3vw, 28px) }
+header { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px }
+h1 { font-size: clamp(1.35rem, 5vw, 2.1rem); margin: 0 }
+button { font: inherit; font-weight: 750; cursor: pointer; touch-action: manipulation; color: inherit }
+button:focus-visible, summary:focus-visible { outline: 3px solid #9b420d; outline-offset: 3px }
+nav, .controls { display: grid; gap: 8px }
+nav { grid-template-columns: repeat(3, 1fr); margin-bottom: 10px }
+nav button, #sound { border: 1px solid #b7c9bd; background: #fffdfa; min-height: 44px; border-radius: 12px; padding: 5px 8px }
+nav button[aria-pressed="true"] { background: #20564b; color: white; border-color: #20564b }
+#sound { white-space: nowrap; font-size: .85rem }
+.scene { position: relative; overflow: hidden; isolation: isolate; height: clamp(145px, 43dvh, 340px); border-radius: 22px; background: linear-gradient(#baddf4 0 61%, #a4c582 61%) }
+.sun { position: absolute; top: 12%; right: 12%; width: clamp(30px, 8vw, 64px); aspect-ratio: 1; background: #ffda71; border-radius: 50% }
+.hill { position: absolute; top: 49%; left: -4%; width: 58%; height: 30%; border-radius: 50% 50% 0 0; background: #83ad74 }
+.hill:nth-child(3) { left: 45%; top: 53%; background: #91bb7b }
+.road { position: absolute; bottom: 10%; width: 100%; height: 26%; background: #485454; border-block: 3px solid #e7ebe0 }
+.road::before { content: ""; position: absolute; top: 55%; inset-inline: 0; border-top: 3px dashed #faf0c8 }
+#tunnel { position: absolute; z-index: 2; right: 8%; bottom: 10%; width: 25%; height: 51%; border: clamp(7px, 2.5vw, 20px) solid #738780; border-bottom: 0; border-radius: 48% 48% 0 0; background: #273734 }
+#car { position: absolute; z-index: 1; width: clamp(77px, 19vw, 145px); height: auto; left: 5%; bottom: 23%; transform: scaleX(-1); transition: left 750ms ease-in-out, opacity 180ms }
+#car.forward { left: 73% }
+#car.inside { opacity: 0 }
+#cue { position: absolute; z-index: 3; left: 8%; top: 10%; margin: 0; padding: 5px 14px; background: #fffdfa; border-radius: 12px; font-size: clamp(1.35rem, 6vw, 2.5rem); font-weight: 850 }
+.controls { grid-template-columns: minmax(0, 3fr) minmax(0, 1fr); margin-top: 10px }
+.controls button { border: 0; border-radius: 15px; min-height: 60px; font-size: clamp(1rem, 5vw, 1.55rem) }
+#play { background: #20564b; color: white }
+#stop { background: #e1e8dd }
+#stop:disabled { opacity: .55; cursor: default }
+details { margin-top: 12px; line-height: 1.55; font-size: .9rem }
+summary { cursor: pointer; min-height: 32px }
+details p { margin: 4px 0 }
+@media (max-height: 480px) and (orientation: landscape) {
+  main { padding-block: 8px }
+  header { margin-bottom: 6px }
+  nav { margin-bottom: 6px }
+  .scene { height: 40dvh }
+  .controls button { min-height: 46px }
+}
+@media (prefers-reduced-motion: reduce) { #car { transition: none } }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>부릉부릉 놀이터</h1>
+    <button id="sound" type="button" aria-pressed="true">소리 켜짐</button>
+  </header>
+  <nav aria-label="자동차 놀이 고르기">
+    <button type="button" data-mode="race" aria-pressed="true">경주</button>
+    <button type="button" data-mode="horn" aria-pressed="false">경적</button>
+    <button type="button" data-mode="tunnel" aria-pressed="false">터널</button>
+  </nav>
+  <section class="scene" aria-label="자동차 놀이터">
+    <div class="sun" aria-hidden="true"></div>
+    <div class="hill" aria-hidden="true"></div>
+    <div class="hill" aria-hidden="true"></div>
+    <div class="road" aria-hidden="true"></div>
+    <div id="tunnel" aria-hidden="true" hidden></div>
+    <img id="car" alt="빨간 자동차" draggable="false" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 150 90'%3E%3Cpath fill='%23ab332c' d='M8 65V47q0-7 10-10l22-5 20-23h46l20 23 14 5q5 2 5 10v18q0 6-6 6H14q-6 0-6-6Z'/%3E%3Cpath fill='%23d3eaf1' d='M49 32 65 15h16v17Zm39 0V15h15l15 17Z'/%3E%3Cpath fill='%23fff0bc' d='M8 48h16v10H8z'/%3E%3Ccircle cx='37' cy='70' r='15' fill='%23243030'/%3E%3Ccircle cx='116' cy='70' r='15' fill='%23243030'/%3E%3Ccircle cx='37' cy='70' r='6' fill='%23cbd9d5'/%3E%3Ccircle cx='116' cy='70' r='6' fill='%23cbd9d5'/%3E%3C/svg%3E">
+    <p id="cue" role="status" aria-live="polite">준비!</p>
+  </section>
+  <div class="controls">
+    <button id="play" type="button">출발!</button>
+    <button id="stop" type="button" disabled>멈춰</button>
+  </div>
+  <details>
+    <summary>함께 노는 방법</summary>
+    <p>“준비…” 하고 잠깐 쉬어 보세요. 아이가 버튼을 누르거나 손짓하거나 작은 소리를 내면 함께 차를 움직여요. 잠깐 기다렸다가 어른이 먼저 눌러도 좋아요.</p>
+    <p>아이가 낸 소리를 따라 하거나 화면에 나온 “부웅”, “빵빵”, “쏙”을 차례로 들려주세요.</p>
+  </details>
+</main>
+<script>
+const car = document.querySelector('#car');
+const tunnel = document.querySelector('#tunnel');
+const cue = document.querySelector('#cue');
+const play = document.querySelector('#play');
+const stop = document.querySelector('#stop');
+const sound = document.querySelector('#sound');
+const modes = document.querySelectorAll('[data-mode]');
+const activities = {
+  race: { ready: '준비!', action: '출발!' },
+  horn: { ready: '경적을 울려요', action: '빵빵!' },
+  tunnel: { ready: '터널을 지나가요', action: '쏙 들어가요' }
+};
+let mode = 'race';
+let position = 0;
+let timer;
+let audio;
+let muted = false;
+
+function speak(text) {
+  if (muted || !window.speechSynthesis || !window.SpeechSynthesisUtterance) return;
+  const line = new SpeechSynthesisUtterance(text);
+  line.lang = 'ko-KR';
+  line.rate = 0.85;
+  line.volume = 0.7;
+  speechSynthesis.cancel();
+  speechSynthesis.speak(line);
+}
+
+function honk() {
+  if (muted) return;
+  const AudioEngine = window.AudioContext || window.webkitAudioContext;
+  if (!AudioEngine) {
+    speak('빵빵');
+    return;
+  }
+  audio ??= new AudioEngine();
+  audio.resume().catch(() => {});
+  for (const offset of [0, 0.19]) {
+    const from = audio.currentTime + offset;
+    const tone = audio.createOscillator();
+    const volume = audio.createGain();
+    tone.frequency.value = 350;
+    volume.gain.setValueAtTime(0, from);
+    volume.gain.linearRampToValueAtTime(0.09, from + 0.025);
+    volume.gain.linearRampToValueAtTime(0, from + 0.13);
+    tone.connect(volume).connect(audio.destination);
+    tone.start(from);
+    tone.stop(from + 0.14);
+  }
+}
+
+function reset() {
+  clearTimeout(timer);
+  window.speechSynthesis?.cancel();
+  if (audio?.state === 'running') audio.suspend().catch(() => {});
+  car.classList.remove('forward', 'inside');
+  position = 0;
+  stop.disabled = true;
+  play.disabled = false;
+  cue.textContent = activities[mode].ready;
+  play.textContent = activities[mode].action;
+}
+
+for (const button of modes) {
+  button.addEventListener('click', () => {
+    mode = button.dataset.mode;
+    for (const option of modes) option.setAttribute('aria-pressed', String(option === button));
+    tunnel.hidden = mode !== 'tunnel';
+    reset();
+  });
+}
+
+play.addEventListener('click', () => {
+  stop.disabled = false;
+  if (mode === 'horn') {
+    cue.textContent = '빵빵!';
+    honk();
+    return;
+  }
+
+  if (play.disabled) return;
+  clearTimeout(timer);
+  position = position === 2 ? 0 : 1;
+  car.classList.toggle('forward', position === 1);
+  car.classList.remove('inside');
+  if (position === 0) {
+    cue.textContent = mode === 'tunnel' ? '나왔다!' : '다시 준비!';
+    play.textContent = activities[mode].action;
+    if (mode === 'tunnel') speak('나왔다');
+    return;
+  }
+
+  cue.textContent = mode === 'tunnel' ? '쏙!' : '부우웅!';
+  speak(mode === 'tunnel' ? '쏙' : '부우웅');
+  play.disabled = true;
+  timer = setTimeout(() => {
+    play.disabled = false;
+    if (mode === 'tunnel') {
+      position = 2;
+      car.classList.add('inside');
+      play.textContent = '나와!';
+    } else {
+      position = 0;
+      car.classList.remove('forward');
+      play.textContent = '한 번 더!';
+    }
+  }, mode === 'tunnel' ? 760 : 900);
+});
+
+stop.addEventListener('click', () => {
+  reset();
+  cue.textContent = '멈췄어요';
+  speak('멈춰');
+});
+sound.addEventListener('click', () => {
+  muted = !muted;
+  sound.setAttribute('aria-pressed', String(!muted));
+  sound.textContent = muted ? '소리 꺼짐' : '소리 켜짐';
+  if (muted) {
+    window.speechSynthesis?.cancel();
+    if (audio?.state === 'running') audio.suspend().catch(() => {});
+  }
+});
+</script>
+</body>
+</html>
