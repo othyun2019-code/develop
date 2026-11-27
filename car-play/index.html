@@ -59,12 +59,13 @@ details p { margin: 4px 0 }
 .basket:active { scale: .98 }
 .basket-red { --pale: #fff0ed; --rim: #a82c30; --bin: #d94245 }
 .basket-blue { --pale: #eaf3ff; --rim: #1d5493; --bin: #377bc4 }
-.basket-shape { position: relative; display: block; width: min(90%, 125px); height: 66px; isolation: isolate }
-.basket-shape::before { content: ""; position: absolute; inset: 12px 0 0; border-radius: 8px 8px 14px 14px; background: var(--rim); clip-path: polygon(0 0, 100% 0, 88% 100%, 12% 100%) }
-.basket-shape::after { content: ""; position: absolute; z-index: 2; inset: 33px 5% 0; border-top: 3px solid var(--rim); border-radius: 0 0 12px 12px; background: repeating-linear-gradient(90deg, var(--bin) 0 10px, var(--rim) 10px 12px); clip-path: polygon(0 0, 100% 0, 91% 100%, 9% 100%) }
-.basket-cars { position: absolute; z-index: 1; top: 18px; inset-inline: 10%; display: flex; justify-content: center; gap: 2px }
-.basket-car { width: min(31%, 28px); height: 21px; background: var(--mini-paint); border-radius: 3px; clip-path: polygon(0 50%, 23% 42%, 41% 0, 71% 0, 86% 39%, 100% 55%, 100% 90%, 0 90%); animation: settle-car 210ms ease-out both }
-.basket-car::after { content: ""; display: block; margin: 3px auto 0; width: 37%; height: 6px; background: #e5f5f8; border-radius: 2px }
+.basket-shape { position: relative; display: block; width: min(94%, 144px); height: 76px; isolation: isolate }
+.basket-shape::before { content: ""; position: absolute; inset: 5px 0 0; border: 4px solid var(--rim); border-radius: 10px 10px 14px 14px; background: #fff4d7; clip-path: polygon(0 0, 100% 0, 88% 100%, 12% 100%) }
+.basket-shape::after { content: ""; position: absolute; z-index: 2; inset: 45px 5% 0; border-top: 3px solid var(--rim); border-radius: 0 0 12px 12px; background: repeating-linear-gradient(90deg, var(--bin) 0 10px, var(--rim) 10px 12px); clip-path: polygon(0 0, 100% 0, 91% 100%, 9% 100%) }
+.basket-cars { position: absolute; z-index: 1; top: 14px; inset-inline: 8%; display: flex; justify-content: center; gap: 3px }
+.basket-car { position: relative; flex: 0 1 34px; min-width: 0; height: 26px; filter: drop-shadow(0 1px 1px #37251b66); animation: settle-car 210ms ease-out both }
+.basket-car::before { content: ""; position: absolute; inset: 0 0 4px; background: var(--mini-paint); border-radius: 4px; clip-path: polygon(0 49%, 24% 39%, 39% 0, 70% 0, 86% 38%, 100% 54%, 100% 100%, 0 100%) }
+.basket-car::after { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 22% 84%, #c8d6d4 1px, #253136 2px 4px, transparent 4.5px), radial-gradient(circle at 79% 84%, #c8d6d4 1px, #253136 2px 4px, transparent 4.5px), linear-gradient(#e5f5f8, #e5f5f8) 53% 21% / 32% 6px no-repeat }
 .basket-name { position: absolute; z-index: 3; inset-inline: 0; bottom: 7px; color: #fff; font-size: .92rem; font-weight: 850; line-height: 1; text-shadow: 0 1px 2px #0009 }
 .basket-count { display: grid; place-items: center; min-width: 44px; min-height: 44px; padding: 3px 8px; border-radius: 999px; background: var(--pale); color: var(--rim); font-size: clamp(1.6rem, 6vw, 2rem); font-weight: 850; line-height: 1; font-variant-numeric: tabular-nums }
 @keyframes settle-car { from { transform: translateY(-8px) } to { transform: translateY(0) } }
