@@ -57,10 +57,10 @@ details p { margin: 4px 0 }
   </div>
   <div id="scene">
     <canvas id="street" role="img" aria-label="도시의 세로 도로를 달리는 자동차"></canvas>
-    <p id="cue">준비!</p>
+    <p id="cue">시작 버튼을 눌러요</p>
   </div>
-  <button id="mic" type="button" aria-pressed="false">마이크 켜기</button>
-  <p id="mic-status" role="status">마이크를 켜면 소리로 탈것을 움직일 수 있어요.</p>
+  <button id="mic" type="button" aria-pressed="false">시작</button>
+  <p id="mic-status" role="status">시작하면 마이크로 소리를 들어요.</p>
   <label id="mic-options" hidden>민감도
     <select id="mic-sensitivity">
       <option value="0.028">낮게</option>
@@ -70,7 +70,7 @@ details p { margin: 4px 0 }
   </label>
   <details>
     <summary>함께 노는 방법</summary>
-    <p>“아”, “으”처럼 편한 소리를 내 보세요. 소리가 들리면 탈것이 앞으로 가고, 조용해지면 그 자리에 멈춰요.</p>
+    <p>시작을 누르고 마이크 사용을 허용해 주세요. “아”, “으”처럼 편한 소리를 내 보세요. 소리가 들리면 탈것이 앞으로 가고, 조용해지면 그 자리에 멈춰요.</p>
     <p>주변 소리에도 반응할 수 있어요. 마이크 입력은 이 기기에서 소리 크기를 확인하는 데만 쓰고 녹음하거나 전송하지 않아요.</p>
   </details>
 </main>
@@ -291,13 +291,13 @@ function showMicState(state, message) {
   scene.classList.remove('moving');
   drawStreet();
   micButton.setAttribute('aria-pressed', String(state === 'on'));
-  micButton.textContent = { off: '마이크 켜기', starting: '마이크 취소', on: '마이크 끄기' }[state];
+  micButton.textContent = { off: '시작', starting: '취소', on: '놀이 멈추기' }[state];
   micOptions.hidden = state !== 'on';
   micStatus.textContent = message;
-  cue.textContent = state === 'on' ? '소리를 내 봐요!' : '준비!';
+  cue.textContent = { off: '시작 버튼을 눌러요', starting: '시작 준비 중', on: '소리를 내 봐요!' }[state];
 }
 
-function stopMicrophone(message = '마이크가 꺼졌어요.') {
+function stopMicrophone(message = '다시 놀려면 시작을 눌러요.') {
   micRequest++;
   cancelAnimationFrame(micFrame);
   micStream?.getTracks().forEach(track => track.stop());
@@ -377,7 +377,7 @@ async function startMicrophone() {
     analyser.fftSize = 1024;
     context.createMediaStreamSource(stream).connect(analyser);
     stream.getAudioTracks().forEach(track => track.addEventListener('ended', () => {
-      stopMicrophone('마이크 연결이 끊겼어요. 다시 켤 수 있어요.');
+      stopMicrophone('마이크 연결이 끊겼어요. 다시 시작할 수 있어요.');
     }));
     showMicState('on', '듣고 있어요. 소리를 내면 앞으로 가요.');
     listen(analyser);
@@ -385,7 +385,7 @@ async function startMicrophone() {
     if (request !== micRequest) return;
     stopMicrophone(error.name === 'NotAllowedError'
       ? '마이크 권한을 허용하면 소리에 반응해요.'
-      : '마이크를 시작할 수 없어요. 연결을 확인하고 다시 켜 주세요.');
+      : '마이크를 시작할 수 없어요. 연결을 확인하고 시작을 다시 눌러 주세요.');
   }
 }
 
