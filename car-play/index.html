@@ -59,8 +59,15 @@ details p { margin: 4px 0 }
 .basket:active { scale: .98 }
 .basket-red { --pale: #fff0ed; --rim: #a82c30; --bin: #d94245 }
 .basket-blue { --pale: #eaf3ff; --rim: #1d5493; --bin: #377bc4 }
-.basket-shape { position: relative; width: min(78%, 112px); height: 45px; border-top: 8px solid var(--rim); border-radius: 6px 6px 14px 14px; background: repeating-linear-gradient(90deg, var(--bin) 0 10px, var(--rim) 10px 12px); clip-path: polygon(0 0, 100% 0, 89% 100%, 11% 100%) }
-.basket-shape::before { content: ""; position: absolute; inset: 13px 0 auto; height: 2px; background: var(--rim) }
+.basket-shape { position: relative; display: block; width: min(90%, 125px); height: 56px; isolation: isolate }
+.basket-shape::before { content: ""; position: absolute; inset: 12px 0 0; border-radius: 8px 8px 14px 14px; background: var(--rim); clip-path: polygon(0 0, 100% 0, 88% 100%, 12% 100%) }
+.basket-shape::after { content: ""; position: absolute; z-index: 2; inset: 33px 5% 0; border-top: 3px solid var(--rim); border-radius: 0 0 12px 12px; background: repeating-linear-gradient(90deg, var(--bin) 0 10px, var(--rim) 10px 12px); clip-path: polygon(0 0, 100% 0, 91% 100%, 9% 100%) }
+.basket-cars { position: absolute; z-index: 1; top: 18px; inset-inline: 10%; display: flex; justify-content: center; gap: 2px }
+.basket-car { width: min(31%, 28px); height: 21px; background: var(--mini-paint); border-radius: 3px; clip-path: polygon(0 50%, 23% 42%, 41% 0, 71% 0, 86% 39%, 100% 55%, 100% 90%, 0 90%); animation: settle-car 210ms ease-out both }
+.basket-car::after { content: ""; display: block; margin: 3px auto 0; width: 37%; height: 6px; background: #e5f5f8; border-radius: 2px }
+.basket-count { color: #354d48; font-size: .8rem; line-height: 1 }
+@keyframes settle-car { from { transform: translateY(-8px) } to { transform: translateY(0) } }
+@media (prefers-reduced-motion: reduce) { .basket-car { animation: none } }
 </style>
 </head>
 <body>
@@ -114,10 +121,14 @@ details p { margin: 4px 0 }
     </div>
     <div class="baskets" role="group" aria-label="바구니 고르기">
       <button type="button" class="basket basket-red" data-basket="red">
-        <span class="basket-shape" aria-hidden="true"></span>빨간 바구니
+        <span class="basket-shape" aria-hidden="true"><span class="basket-cars"></span></span>
+        <span class="basket-name">빨간 바구니</span>
+        <span class="basket-count" hidden></span>
       </button>
       <button type="button" class="basket basket-blue" data-basket="blue">
-        <span class="basket-shape" aria-hidden="true"></span>파란 바구니
+        <span class="basket-shape" aria-hidden="true"><span class="basket-cars"></span></span>
+        <span class="basket-name">파란 바구니</span>
+        <span class="basket-count" hidden></span>
       </button>
     </div>
   </section>
@@ -475,6 +486,23 @@ const sortNames = { red: '빨간 자동차', blue: '파란 자동차' };
 const sortSequence = ['red', 'blue', 'blue', 'red'];
 let sortTurn = 0;
 let sortAnimation;
+const sortedCounts = { red: 0, blue: 0 };
+
+function finishSortDrop(basket) {
+  const color = basket.dataset.basket;
+  const count = ++sortedCounts[color];
+  const cars = basket.querySelector('.basket-cars');
+  if (cars.childElementCount < 3) {
+    const car = document.createElement('span');
+    car.className = 'basket-car';
+    car.style.setProperty('--mini-paint', colors[color].body);
+    cars.append(car);
+  }
+  const counter = basket.querySelector('.basket-count');
+  counter.textContent = count + '대';
+  counter.hidden = false;
+  nextSortCar();
+}
 
 function nextSortCar() {
   sortTurn = (sortTurn + 1) % sortSequence.length;
@@ -507,27 +535,29 @@ async function placeSortCar(basket, x = 0, y = 0) {
   if (!correct) sortStatus.textContent = '자동차와 같은 색 바구니에 넣어봐요.';
   if (!sortCar.animate || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     sortCar.style.transform = '';
-    if (correct) nextSortCar();
+    if (correct) finishSortDrop(basket);
     return;
   }
 
   const from = 'translate(' + x + 'px, ' + y + 'px)';
-  let to = 'translate(0, 0)';
+  const keyframes = [{ transform: from, opacity: 1 }];
   if (correct) {
     const car = sortCar.getBoundingClientRect();
     const bin = basket.querySelector('.basket-shape').getBoundingClientRect();
     const targetX = x + bin.left + (bin.width - car.width) / 2 - car.left;
     const targetY = y + bin.top + (bin.height - car.height) / 2 - car.top;
-    to = 'translate(' + targetX + 'px, ' + targetY + 'px) scale(.32)';
+    keyframes.push(
+      { transform: 'translate(' + targetX + 'px, ' + (targetY - 17) + 'px) scale(.42)', opacity: 1, offset: .68 },
+      { transform: 'translate(' + targetX + 'px, ' + (targetY + 8) + 'px) scale(.2)', opacity: 0 }
+    );
+  } else {
+    keyframes.push({ transform: 'translate(0, 0)', opacity: 1 });
   }
-  const animation = sortCar.animate([
-    { transform: from, opacity: 1 },
-    { transform: to, opacity: correct ? 0.2 : 1 }
-  ], { duration: correct ? 280 : 220, easing: 'ease-out' });
+  const animation = sortCar.animate(keyframes, { duration: correct ? 350 : 220, easing: 'ease-out' });
   sortAnimation = animation;
   try {
     await animation.finished;
-    if (correct) nextSortCar();
+    if (correct) finishSortDrop(basket);
   } catch {
     // Switching activities cancels the current movement.
   } finally {
